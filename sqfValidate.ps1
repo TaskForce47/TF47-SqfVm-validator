@@ -14,8 +14,8 @@ if(! (Test-Path ($sqfVm))) {
     $url = "https://github.com/SQFvm/vm/releases/download/1.3.2-RC1/1.3.2.RC1-Win64-x64.zip"
     $temp = "$PSScriptRoot\sqfvm.zip"
     Invoke-WebRequest -Uri $url -OutFile $temp
-    Expand-Archive -LiteralPath $output -DestinationPath "$PSScriptRoot\sqfvm"
-    Remove-Item -path $output
+    Expand-Archive -LiteralPath $temp -DestinationPath "$PSScriptRoot\sqfvm"
+    Remove-Item -path $temp
     Write-Output "Extracted to $sqfvm"
 }
 else
@@ -23,12 +23,16 @@ else
     Write-Output "SqfVm found successful"
 }
 
-$sqfFiles = Get-ChildItem -Path $testfolder -Recurse -Force
-Write-Output $sqfFiles
+$sqfFiles = Get-ChildItem -Path "$testfolder\*.sqf" -Recurse -Force
+$configFiles = Get-ChildItem -Path "$testfolder\*.hpp" -Recurse -Force
+$testFiles = $sqfFiles + $configFiles
 
+
+#Write-Output $sqfFiles
 $failed = $false;
+$errorCount = 0;
 
-foreach ($file in $sqfFiles) {
+foreach ($file in $testFiles) {
     Write-Output "Testing file $file"
     $vm = New-Object System.Diagnostics.ProcessStartInfo
     $vm.FileName = $sqfVm
@@ -38,24 +42,24 @@ foreach ($file in $sqfFiles) {
     $vm.RedirectStandardOutput = $true
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $vm
-    $process.Start();
+    $process.Start() > $null
     $process.WaitForExit();
-    $exitCode = $process.ExitCode.ToString()
     if($process.ExitCode -ne 0) {
+        $errorCount = $errorCount + 1;
         $failed = $true
+    } else {
+        Write-Output "Passed!"
     }
-    $output = $process.StandardOutput.ReadToEnd()
-    Write-Output $output
     $output = $process.StandardError.ReadToEnd()
     if($output) {
         Write-Warning $output
     }
-    Write-Output "Exit code was: $exitCode"
 }
 
 if($failed) {
-    Write-Error "[TEST FAILED] Some scripts did not pass the test!"
+    Write-Error "[TEST FAILED] Some scripts did not pass the test! Errors: $errorCount"
     Exit -1
 } else {
+    Write-Output "[TEST SUCCESSFUL] No errors where found!"
     Exit 0
 }
