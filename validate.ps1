@@ -23,7 +23,7 @@ else
     Write-Output "SqfVm found successful"
 }
 
-$sqfFiles = Get-ChildItem -Path ($PSScriptRoot+"\Corescripts\*.sqf") -Recurse -Force
+$sqfFiles = Get-ChildItem -Path $testfolder -Recurse -Force
 Write-Output $sqfFiles
 
 $failed = $false;
@@ -32,7 +32,7 @@ foreach ($file in $sqfFiles) {
     Write-Output "Testing file $file"
     $vm = New-Object System.Diagnostics.ProcessStartInfo
     $vm.FileName = $sqfVm
-    $vm.Arguments = "-a --no-execute-print --parse-only --load . -i $file --disable-macro-warnings"
+    $vm.Arguments = "-a --no-execute-print --parse-only --load $testfolder -i $file --disable-macro-warnings"
     $vm.UseShellExecute = $false
     $vm.RedirectStandardError = $true
     $vm.RedirectStandardOutput = $true
